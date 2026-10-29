@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -27,9 +28,11 @@ public class PlayerManager implements ConfigHolder {
     private File enabledPlayersFile = null;
     private FileConfiguration enabledPlayersConfig;
 
-    private boolean invisibleAlwaysHideGear;
+    // Read from netty threads (packet listeners) and every region thread on Folia.
+    private volatile boolean invisibleAlwaysHideGear;
 
-    private Set<UUID> enabledPlayersUUID = new HashSet<>();
+    // Mutated by commands and events on any region thread, read by packet listeners on netty threads.
+    private volatile Set<UUID> enabledPlayersUUID = ConcurrentHashMap.newKeySet();
     private final Set<Predicate<Player>> forceDisablePredicates = new HashSet<>();
     private final Set<Predicate<Player>> forceEnablePredicates = new HashSet<>();
 
@@ -116,7 +119,9 @@ public class PlayerManager implements ConfigHolder {
 
     private void loadEnabledPlayers() {
         loadEnabledPlayersConfig();
-        this.enabledPlayersUUID = enabledPlayersConfig.getStringList("enabled-players").stream().map(UUID::fromString).collect(Collectors.toSet());
+        Set<UUID> loaded = ConcurrentHashMap.newKeySet();
+        enabledPlayersConfig.getStringList("enabled-players").stream().map(UUID::fromString).forEach(loaded::add);
+        this.enabledPlayersUUID = loaded;
     }
 
     private void loadEnabledPlayersConfig() {

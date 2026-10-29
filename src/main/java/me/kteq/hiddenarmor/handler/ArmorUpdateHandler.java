@@ -9,6 +9,7 @@ import me.kteq.hiddenarmor.HiddenArmor;
 import me.kteq.hiddenarmor.util.protocol.PacketFields;
 import me.kteq.hiddenarmor.util.protocol.PacketIndexMapper;
 import me.kteq.hiddenarmor.util.protocol.ProtocolUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -16,6 +17,7 @@ import org.bukkit.inventory.PlayerInventory;
 import java.util.List;
 
 public class ArmorUpdateHandler {
+    private final HiddenArmor plugin;
     private final ProtocolManager protocolManager;
 
     private final int SET_SLOT_$WINDOW_ID_INDEX;
@@ -26,6 +28,7 @@ public class ArmorUpdateHandler {
     private final int ENTITY_EQUIPMENT_$SLOT_ITEM_PAIR_LIST_INDEX;
 
     public ArmorUpdateHandler(HiddenArmor plugin, PacketIndexMapper indexMapper) {
+        this.plugin = plugin;
         this.protocolManager = plugin.getProtocolManager();
 
         this.SET_SLOT_$WINDOW_ID_INDEX = indexMapper.get(PacketFields.SET_SLOT_$WINDOW_ID);
@@ -35,9 +38,22 @@ public class ArmorUpdateHandler {
         this.ENTITY_EQUIPMENT_$SLOT_ITEM_PAIR_LIST_INDEX = indexMapper.get(PacketFields.ENTITY_EQUIPMENT_$SLOT_ITEM_PAIR_LIST);
     }
 
+    /**
+     * Resends the player's armour to themselves and to everyone tracking them. It reads the player's
+     * inventory and tracker, so it runs on the thread that owns the player: straight away when the caller
+     * already owns them (always the case on Paper/Purpur, and for the player's own events on Folia),
+     * otherwise on the player's entity scheduler (e.g. /togglearmor run on another player or from console).
+     */
     public void updatePlayer(Player player) {
-        updateSelf(player);
-        updateToOthers(player);
+        if (Bukkit.isOwnedByCurrentRegion(player)) {
+            updateSelf(player);
+            updateToOthers(player);
+            return;
+        }
+        player.getScheduler().run(plugin, task -> {
+            updateSelf(player);
+            updateToOthers(player);
+        }, null);
     }
 
     public void updateSelf(Player player) {
