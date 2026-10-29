@@ -4,7 +4,6 @@ import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.Pair;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -12,9 +11,15 @@ import org.bukkit.inventory.PlayerInventory;
 
 public class ProtocolUtil {
 
+    /**
+     * Sends the packet to every player whose client is tracking {@code player} (never the player itself).
+     * Previously this scanned every online player and compared locations, which reads other players' state
+     * from regions this thread does not own on Folia. The tracker set is exactly the clients that know the
+     * entity id, so nobody who could act on an equipment packet is skipped. Call on the player's owning thread.
+     */
     public static void broadcastPlayerPacket(ProtocolManager manager, PacketContainer packet, Player player) {
-        for(Player p : Bukkit.getOnlinePlayers()){
-            if(!(p.getWorld().equals(player.getWorld()) && p.getLocation().distance(player.getLocation()) < Bukkit.getViewDistance()*16 && !p.equals(player))) continue;
+        for(Player p : player.getTrackedBy()){
+            if(p.equals(player)) continue;
             manager.sendServerPacket(p, packet);
         }
     }
