@@ -33,6 +33,7 @@ public class PlayerManager implements ConfigHolder {
 
     // Mutated by commands and events on any region thread, read by packet listeners on netty threads.
     private volatile Set<UUID> enabledPlayersUUID = ConcurrentHashMap.newKeySet();
+    private final Map<Integer, Player> playersByEntityId = new ConcurrentHashMap<>();
     private final Set<Predicate<Player>> forceDisablePredicates = new HashSet<>();
     private final Set<Predicate<Player>> forceEnablePredicates = new HashSet<>();
 
@@ -44,6 +45,19 @@ public class PlayerManager implements ConfigHolder {
         this.messageHandler = plugin.getMessageHandler();
         registerDefaultPredicates();
         loadEnabledPlayers();
+    }
+
+    public void trackEntityId(Player player) {
+        playersByEntityId.put(player.getEntityId(), player);
+    }
+
+    public void untrackEntityId(Player player) {
+        playersByEntityId.remove(player.getEntityId());
+    }
+
+    /** The online player with this entity id, or null. Safe from any thread, unlike asking the world. */
+    public Player playerByEntityId(int entityId) {
+        return playersByEntityId.get(entityId);
     }
 
     public void togglePlayer(Player player, boolean inform) {

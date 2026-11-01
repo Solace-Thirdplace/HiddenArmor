@@ -1,7 +1,6 @@
 package me.kteq.hiddenarmor.listener.packet;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
@@ -17,7 +16,6 @@ import me.kteq.hiddenarmor.util.ItemUtil;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -25,7 +23,6 @@ import java.util.List;
 
 public class EntityEquipmentPacketListener extends PacketAdapter implements ConfigHolder {
     private final PlayerManager hiddenArmorManager;
-    private final ProtocolManager protocolManager;
 
     private boolean ignoreLeatherArmor;
     private boolean ignoreTurtleHelmet;
@@ -39,7 +36,6 @@ public class EntityEquipmentPacketListener extends PacketAdapter implements Conf
         plugin.addConfigHolder(this);
 
         this.hiddenArmorManager = plugin.getPlayerManager();
-        this.protocolManager = plugin.getProtocolManager();
 
         this.ENTITY_ID_INDEX = indexMapper.get(PacketFields.ENTITY_EQUIPMENT_$SLOT_ITEM_PAIR_LIST);
         this.SLOT_ITEM_PAIR_LIST_INDEX = indexMapper.get(PacketFields.ENTITY_EQUIPMENT_$ENTITY_ID);
@@ -48,11 +44,10 @@ public class EntityEquipmentPacketListener extends PacketAdapter implements Conf
     @Override
     public void onPacketSending(PacketEvent event) {
         PacketContainer packet = event.getPacket();
-        Player player = event.getPlayer();
-
-        LivingEntity livingEntity = (LivingEntity) protocolManager.getEntityFromID(player.getWorld(), packet.getIntegers().read(ENTITY_ID_INDEX));
-        if(!(livingEntity instanceof Player)) return;
-        Player packetPlayer = (Player) livingEntity;
+        // ProtocolLib runs this on whichever thread sent the packet, and Nexo's furniture culling sends
+        // from an async thread, where the world's entity lookup throws. Only players matter here.
+        Player packetPlayer = hiddenArmorManager.playerByEntityId(packet.getIntegers().read(ENTITY_ID_INDEX));
+        if(packetPlayer == null) return;
 
         if(hiddenArmorManager.isArmorVisible(packetPlayer)) return;
 
