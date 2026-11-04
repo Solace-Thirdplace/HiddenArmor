@@ -8,7 +8,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityToggleGlideEvent;
-import org.bukkit.scheduler.BukkitRunnable;
 
 public class EntityToggleGlideListener implements Listener {
     HiddenArmor plugin;
@@ -30,11 +29,6 @@ public class EntityToggleGlideListener implements Listener {
         Player player = (Player) e.getEntity();
         if(playerManager.isArmorVisible(player)) return;
 
-        new BukkitRunnable(){
-            @Override
-            public void run() {
-                armorUpdater.updatePlayer(player);
-            }
-        }.runTaskLater(plugin, 1L);
+        player.getScheduler().runDelayed(plugin, task -> armorUpdater.updatePlayer(player), null, 1L);
     }
 }

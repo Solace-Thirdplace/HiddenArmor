@@ -5,7 +5,6 @@ import me.kteq.hiddenarmor.HiddenArmor;
 import me.kteq.hiddenarmor.util.ConfigHolder;
 import me.kteq.hiddenarmor.util.ItemUtil;
 import me.kteq.hiddenarmor.util.StrUtil;
-import org.apache.commons.lang.WordUtils;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -111,7 +110,7 @@ public class ArmorPlaceholderHandler implements ConfigHolder {
     private String buildName(ItemStack itemStack){
         String name = itemStack.getType().toString();
         name = name.replaceAll("_", " ");
-        name = WordUtils.capitalizeFully(name);
+        name = StrUtil.capitalizeFully(name);
 
         ItemMeta itemMeta = itemStack.getItemMeta();
         if(itemMeta != null && itemMeta.hasDisplayName())

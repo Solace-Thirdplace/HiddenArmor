@@ -4,10 +4,10 @@ import me.kteq.hiddenarmor.HiddenArmor;
 import me.kteq.hiddenarmor.manager.PlayerManager;
 import me.kteq.hiddenarmor.util.EventUtil;
 import org.bukkit.GameMode;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.*;
-import org.bukkit.scheduler.BukkitRunnable;
 
 public class GameModeListener implements Listener {
     HiddenArmor plugin;
@@ -28,16 +28,15 @@ public class GameModeListener implements Listener {
             plugin.getArmorUpdater().updatePlayer(event.getPlayer());
         }
 
-        new BukkitRunnable(){
-            @Override
-            public void run() {
-                if (event.getNewGameMode().equals(GameMode.CREATIVE)) {
-                    hiddenArmorManager.enablePlayer(event.getPlayer(), false);
-                } else {
-                    plugin.getArmorUpdater().updatePlayer(event.getPlayer());
-                }
+        Player player = event.getPlayer();
+        GameMode newGameMode = event.getNewGameMode();
+        player.getScheduler().runDelayed(plugin, task -> {
+            if (newGameMode.equals(GameMode.CREATIVE)) {
+                hiddenArmorManager.enablePlayer(player, false);
+            } else {
+                plugin.getArmorUpdater().updatePlayer(player);
             }
-        }.runTaskLater(plugin, 1L);
+        }, null, 1L);
     }
 
 

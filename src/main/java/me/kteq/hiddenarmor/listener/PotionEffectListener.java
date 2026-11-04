@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.potion.PotionEffectType;
 
 public class PotionEffectListener implements Listener {
     HiddenArmor plugin;
@@ -26,13 +26,11 @@ public class PotionEffectListener implements Listener {
     @EventHandler
     public void onPlayerInvisibleEffect(EntityPotionEffectEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
+        // Only invisibility decides whether gear is shown (PlayerManager's isInvisible predicates);
+        // every other effect change, such as each beacon refresh, needs no armour resend.
+        if (!PotionEffectType.INVISIBILITY.equals(event.getModifiedType())) return;
         Player player = (Player) event.getEntity();
 
-        new BukkitRunnable(){
-            @Override
-            public void run() {
-                armorUpdater.updatePlayer(player);
-            }
-        }.runTaskLater(plugin, 2L);
+        player.getScheduler().runDelayed(plugin, task -> armorUpdater.updatePlayer(player), null, 2L);
     }
 }
